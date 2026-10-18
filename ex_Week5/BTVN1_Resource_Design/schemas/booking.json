@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Booking",
+  "type": "object",
+  "required": [
+    "customer_id",
+    "room_id",
+    "check_in_date",
+    "check_out_date"
+  ],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "customer_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "room_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "check_in_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "check_out_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "cancelled",
+        "completed"
+      ]
+    },
+    "total_price": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false
+}
