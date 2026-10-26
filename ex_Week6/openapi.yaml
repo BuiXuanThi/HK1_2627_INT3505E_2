@@ -1,0 +1,305 @@
+openapi: 3.0.3
+
+info:
+  title: Social Network API
+  version: 1.0.0
+  description: >
+    OpenAPI specification for authentication and post retrieval.
+    The API uses Bearer JWT access tokens and OAuth2-style scopes.
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: Login and token refresh operations
+  - name: Posts
+    description: Operations related to social-network posts
+
+paths:
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login to the system
+      description: >
+        Authenticates a user using email and password and returns
+        an access token and a refresh token.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+        '400':
+          description: Invalid request format
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Invalid email or password
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '429':
+          description: Too many login attempts
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: >
+        Uses a valid refresh token to obtain a new access token.
+        The refresh token may also be rotated.
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+        '400':
+          description: Refresh token is missing or request format is invalid
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Refresh token is invalid, expired, or revoked
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '429':
+          description: Too many refresh attempts
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+  /posts/{id}:
+    get:
+      tags:
+        - Posts
+      summary: Get a post by ID
+      description: >
+        Returns a post identified by its ID.
+        The caller must provide a valid access token containing
+        the posts:read scope.
+      operationId: getPostById
+
+      security:
+        - bearerAuth:
+            - posts:read
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique ID of the post
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+
+      responses:
+        '200':
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+        '400':
+          description: Invalid post ID
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '401':
+          description: Access token is missing, invalid, or expired
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '403':
+          description: >
+            The authenticated user does not have the posts:read scope
+            or is not authorized to access this post.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: Post not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+components:
+
+  securitySchemes:
+
+    bearerAuth:
+      type: oauth2
+      description: >
+        Bearer access token used to access protected resources.
+      flows:
+        authorizationCode:
+          authorizationUrl: http://localhost:8080/api/oauth/authorize
+          tokenUrl: http://localhost:8080/api/oauth/token
+          scopes:
+            posts:read: Read posts
+
+
+  schemas:
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: StrongPassword123
+
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+          description: Refresh token issued by the authorization server
+
+
+    TokenResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+      properties:
+        accessToken:
+          type: string
+          description: Short-lived access token
+
+        refreshToken:
+          type: string
+          description: >
+            Refresh token used to obtain a new access token.
+            It may be replaced when refresh-token rotation is enabled.
+
+        tokenType:
+          type: string
+          example: Bearer
+
+        expiresIn:
+          type: integer
+          description: Access-token lifetime in seconds
+          example: 900
+
+        scope:
+          type: string
+          description: Scopes granted to the access token
+          example: posts:read
+
+
+    Post:
+      type: object
+      required:
+        - id
+        - authorId
+        - content
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 15
+
+        authorId:
+          type: integer
+          format: int64
+          example: 42
+
+        content:
+          type: string
+          example: This is my first post.
+
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-26T08:00:00Z'
+
+
+    ErrorResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: about:blank
+
+        title:
+          type: string
+          example: Unauthorized
+
+        status:
+          type: integer
+          example: 401
+
+        detail:
+          type: string
+          example: Authentication failed.
+
+        instance:
+          type: string
+          example: /api/posts/15
