@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: soa
+      POSTGRES_USER: soa
+      POSTGRES_PASSWORD: soa_lab
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soa -d soa"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql+psycopg://soa:soa_lab@db:5432/soa
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "flask --app wsgi db upgrade && exec gunicorn --bind 0.0.0.0:8000 --workers 2 wsgi:app"]
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/ready', timeout=5).close()"]
+      interval: 10s
+      timeout: 6s
+      retries: 5
+      start_period: 15s
+volumes:
+  postgres_data:

@@ -1,0 +1,2 @@
+connexion[flask,swagger-ui,uvicorn]>=3.0,<4
+flask>=3.0,<4
