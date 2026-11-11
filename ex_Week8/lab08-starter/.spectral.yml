@@ -1,0 +1,42 @@
+
+# Use the built-in OpenAPI rules from Spectral.
+extends:
+  - spectral:oas
+
+rules:
+  # Check that every API operation has an operationId.
+  operation-operationId:
+    description: Every API operation must have an operationId.
+    message: Operation must define an operationId.
+    severity: error
+    given: $.paths[*][get,post,put,patch,delete]
+    then:
+      field: operationId
+      function: truthy
+
+  # Check that operationIds are unique.
+  operation-operationId-unique:
+    severity: error
+
+  # Check that HTTP 204 responses do not define a response body.
+  response-204-no-content:
+    description: HTTP 204 responses must not contain a response body.
+    message: A 204 response must not define content.
+    severity: error
+    given: $.paths[*][*].responses['204']
+    then:
+      field: content
+      function: undefined
+
+  # Check that Book.year is integer.
+  book-year-must-be-integer:
+    description: Book year must be an integer or null.
+    message: Book.year must use integer type.
+    severity: error
+    given: $.components.schemas.Book.properties.year
+    then:
+      field: type
+      function: enumeration
+      functionOptions:
+        values:
+          - integer
