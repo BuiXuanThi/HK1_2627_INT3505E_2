@@ -44,7 +44,16 @@ Failure rate không tăng theo số users. Tổng cộng có 633 request search 
 - Mô hình tải là closed-loop với `wait_time` 1-3 giây nên RPS bị quyết định bởi thời gian nghỉ của user ảo (RPS xấp xỉ users chia 2: 4.71, 23.31, 97.23 so với 5, 25, 100), không phải bởi năng lực server. Chưa kịch bản nào làm server bão hòa, nên chưa biết ngưỡng chịu tải.
 - Mỗi lần chạy bao gồm cả giai đoạn tăng user (ramp-up); percentile do Locust tính và làm tròn các giá trị lớn.
 - Không theo dõi CPU/RAM của máy trong lúc chạy nên không có tín hiệu saturation.
+- Cơ sở dữ liệu được xóa và seed 50 sách một lần trước khi chạy, không reset giữa A, B và C. Các request POST thêm lần lượt 19, 217 và 381 sách, nên mỗi kịch bản bắt đầu với nhiều dữ liệu hơn kịch bản trước. Ảnh hưởng của việc này lên độ trễ chưa được đo.
 4. Nếu connection pool bị giới hạn ở 5, bạn sẽ kiểm chứng ảnh hưởng như thế nào?
 
-> Không điền số liệu giả định vào bảng. Không khẳng định hiệu năng production
-> từ SQLite + Flask development server trên máy cá nhân.
+**Trả lời:** Phần này là kế hoạch kiểm chứng, chưa được chạy.
+
+**Cấu hình.** App hiện không đặt pool. Với file SQLite, SQLAlchemy 2.x thường dùng QueuePool mặc định `pool_size=5`, `max_overflow=10`, nên giới hạn thực tế là 15 kết nối (cần xác nhận bằng cách in `db.engine.pool` trong app context). Để giới hạn cứng ở 5, truyền vào `create_app(config=...)`: `SQLALCHEMY_ENGINE_OPTIONS = {"pool_size": 5, "max_overflow": 0, "pool_timeout": 2}`. `pool_timeout` ngắn để lỗi hiện ra trong 30 giây của kịch bản thay vì chờ mặc định.
+
+**Cách đo.** Chạy lại kịch bản C (200 users) trên cùng DB seed với pool 5/0, rồi so với kết quả C đã đo (pool mặc định). So sánh p95, p99 và max, RPS, và số lỗi HTTP 500 thật trong `reports/C_failures.csv`, tách riêng khỏi dòng `Injected failure`. Lỗi do pool cạn thường có dạng "QueuePool limit ... connection timed out" ở log server.
+
+**Giả thuyết trước khi đo.** Theo luật Little, số request đồng thời trung bình xấp xỉ RPS nhân thời gian phản hồi trung bình, tức khoảng N trong kịch bản C, thấp hơn 5. Vì vậy pool 5 có thể chưa cạn, ngoại trừ giai đoạn ramp-up. Nếu kết quả không khác baseline thì không kết luận được "pool không quan trọng", mà chỉ là tải này chưa đủ lớn: cần làm request chậm hơn (ví dụ thêm độ trễ giả lập phía server trong môi trường test) hoặc tăng users và giảm `wait_time` để thấy pool cạn.
+
+**Giới hạn.** Flask development server, SQLite ghi tuần tự, Locust và server chạy chung một máy, mỗi cấu hình chỉ chạy một lần, và DB không được reset giữa các lần chạy.
+
