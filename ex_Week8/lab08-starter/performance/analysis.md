@@ -1,10 +1,9 @@
 # Lab 4 — Phân tích kết quả
 
 | Kịch bản | Users | Spawn rate | Duration | p95 (ms) | Failure rate | RPS |
-|---|---:|---:|---:|---:|---:|---:|
-| A | 10 | 2 | 30s | | | |
-| B | 50 | 5 | 60s | | | |
-| C | 200 | 50 | 30s | | | |
+| A | 10 | 2 | 30s | 18 | 0.00% (0/137) | 4.71 |
+| B | 50 | 5 | 60s | 19 | 0.00% (0/1384) | 23.31 |
+| C | 200 | 50 | 30s | 83 | 0.21% (6/2835) | 97.23 |
 
 1. Kịch bản có p95 cao nhất là gì? Dùng số liệu quan sát để giải thích.
 2. Endpoint nào tăng failure rate? Phân biệt lỗi HTTP thực và lỗi đánh dấu trong Locust.
