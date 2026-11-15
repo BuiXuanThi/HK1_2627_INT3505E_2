@@ -181,8 +181,8 @@
           ]
         }
       ]
-    },  
-      {
+    },
+    {
       "name": "error-cases",
       "item": [
         {
@@ -190,17 +190,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "url": {
               "raw": "{{base_url}}/books",
-              "host": ["{{base_url}}"],
-              "path": ["books"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books"
+              ]
             },
             "body": {
               "mode": "raw",
               "raw": "{\"author\": \"Kleppmann\"}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
           },
           "event": [
@@ -212,6 +223,35 @@
                   "pm.test(\"status is 400 Bad Request\", () => pm.response.to.have.status(400));",
                   "pm.test(\"body code is VALIDATION_ERROR\", () => pm.expect(pm.response.json().code).to.eql(\"VALIDATION_ERROR\"));",
                   "pm.test(\"errors mention the missing field title\", () => { const fields = (pm.response.json().errors || []).map(e => e.field); pm.expect(fields).to.include(\"title\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /books/9999 — unknown id returns 404 NOT_FOUND",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/books/9999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "9999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"status is 404 Not Found\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"body code is NOT_FOUND\", () => pm.expect(pm.response.json().code).to.eql(\"NOT_FOUND\"));"
                 ]
               }
             }
