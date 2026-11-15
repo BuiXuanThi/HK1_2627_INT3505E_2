@@ -1,4 +1,3 @@
-
 # Python virtual environments
 .venv/
 venv/
@@ -17,5 +16,7 @@ instance/
 .env
 .env.*
 
-# Test reports
-reports/
+# Test reports: chỉ commit file HTML của Locust, bỏ qua CSV thô
+reports/*
+!reports/.gitkeep
+!reports/*.html
