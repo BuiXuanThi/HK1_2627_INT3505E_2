@@ -80,5 +80,24 @@ def test_create_delete_get_book(client):
     get_response = client.get(f"/books/{book_id}")
     assert get_response.status_code == 404
 
+# BONUS. Validate Book response using JSON Schema
+def test_response_extra_field_blocked(client, sample_book):
+    response = client.get(f"/books/{sample_book}")
 
+    assert response.status_code == 200
+
+    book_data = response.get_json()
+
+    schema = get_book_schema()
+
+    # Validate response gốc
+    validate(instance=book_data, schema=schema)
+
+    # Copy response và thêm field không hợp lệ
+    invalid_book = book_data.copy()
+    invalid_book["password_hash"] = "fake_hash"
+
+    # Schema phải từ chối field lạ
+    with pytest.raises(ValidationError):
+        validate(instance=invalid_book, schema=schema)
 
