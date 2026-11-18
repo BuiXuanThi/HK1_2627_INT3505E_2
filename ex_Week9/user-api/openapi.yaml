@@ -1,0 +1,108 @@
+openapi: 3.0.3
+info:
+  title: Users API
+  version: "2.0.0"
+  description: v1 đã deprecated (sunset 2026-12-31). Dùng v2.
+servers:
+  - url: http://localhost:5000
+paths:
+  /api/v1/users/{uid}:
+    get:
+      deprecated: true
+      summary: Lấy user (v1, full_name)
+      parameters:
+        - $ref: "#/components/parameters/Uid"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Sunset:
+              schema: { type: string }
+              description: HTTP-date (RFC 8594), v1 ngừng hoạt động
+            Deprecation:
+              schema: { type: string, example: "true" }
+            Link:
+              schema: { type: string }
+              description: rel="successor-version" trỏ tới v2
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserV1" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "410":
+          description: v1 đã sunset
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Gone" }
+  /api/v2/users/{uid}:
+    get:
+      summary: Lấy user (v2, first_name + last_name)
+      parameters:
+        - $ref: "#/components/parameters/Uid"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserV2" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /api/v2/users:
+    post:
+      summary: Tạo user (chỉ có ở v2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UserCreate" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserV2" }
+        "400":
+          description: Dữ liệu không hợp lệ
+components:
+  parameters:
+    Uid:
+      name: uid
+      in: path
+      required: true
+      schema: { type: integer }
+  responses:
+    NotFound:
+      description: Không tìm thấy user
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: nf }
+  schemas:
+    UserV1:
+      type: object
+      required: [id, full_name, email]
+      properties:
+        id: { type: integer, example: 1 }
+        full_name: { type: string, example: "Văn Nguyễn" }
+        email: { type: string, example: a@vnu.vn }
+    UserV2:
+      type: object
+      required: [id, first_name, last_name, email]
+      properties:
+        id: { type: integer, example: 1 }
+        first_name: { type: string, example: "Văn" }
+        last_name: { type: string, example: "Nguyễn" }
+        email: { type: string, example: a@vnu.vn }
+    UserCreate:
+      type: object
+      required: [first_name, last_name, email]
+      properties:
+        first_name: { type: string }
+        last_name: { type: string }
+        email: { type: string }
+    Gone:
+      type: object
+      properties:
+        error: { type: string, example: gone }
+        sunset: { type: string }
+        use_instead: { type: string, example: /api/v2/users }
